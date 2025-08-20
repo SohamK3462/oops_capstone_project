@@ -129,7 +129,8 @@ public class Main {
     private static void createAccount(){
         System.out.println("===Creating new Account===");
         System.out.println("Please enter customer id");
-        String customerId = sc.nextLine().trim();
+        String customerId = sc.next().trim();
+        sc.nextLine();
 
         Customer customer = customers.get(customerId);
 
@@ -173,7 +174,7 @@ public class Main {
     }
 
     private static String generateAccountNo(){
-        return String.format("%10d", System.currentTimeMillis()%100000000L);
+        return String.format("%010d", System.currentTimeMillis() % 10000000000L);
     }
 
     private static void performTransaction(){
