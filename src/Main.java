@@ -7,6 +7,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -102,9 +104,31 @@ public class Main {
 
         System.out.println("Enter email: ");
         String email = sc.nextLine().trim();
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+
+        Pattern pattern = Pattern.compile(emailRegex);
+        Matcher matcher = pattern.matcher(email);
+
+        if (matcher.matches()) {
+            System.out.println("Valid email");
+        } else {
+            System.out.println("Invalid email");
+            return;
+        }
+
 
         System.out.println("Enter phone no: ");
         String phone_no = sc.nextLine().trim();
+        String phoneRegex = "^(?:\\+91|91|0)?[6-9]\\d{9}$";
+        Pattern patternP = Pattern.compile(phoneRegex);
+        Matcher matcherP = pattern.matcher(phone_no);
+
+        if (matcherP.matches()) {
+            System.out.println("Valid Phone no");
+        } else {
+            System.out.println("Invalid Phone no");
+            return;
+        }
 
         System.out.println("Enter dob in yyyy-mm-dd: ");
         String dobStr = sc.nextLine().trim();
@@ -321,9 +345,11 @@ public class Main {
         if(account instanceof SavingsAccount)
         {
             System.out.println("Account Type: Savings Account");
+            System.out.println("Interest Rate:"+account.calculateInterest());
         }
         else {
             System.out.println("Account Type: Currents Accont");
+            System.out.println("Interest Rate"+account.calculateInterest());
         }
 
     }
