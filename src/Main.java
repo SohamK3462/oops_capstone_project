@@ -48,7 +48,9 @@ public class Main {
         System.out.println("3. Perform Transactions");
         System.out.println("4. View Account Details");
         System.out.println("5. View Transaction History");
-        System.out.println("6. Exit");
+        System.out.println("6. Demo Mode");
+        System.out.println("7. Concurrent Transfer");
+        System.out.println("8. Exit");
 
         System.out.println("Enter your choice");
 
@@ -73,6 +75,14 @@ public class Main {
 
             case 5:
                 viewTransactionHistory();
+                break;
+
+            case 6:
+                demoMode();
+                break;
+
+            case 7:
+                conTransfer();
                 break;
         }
 
@@ -121,7 +131,7 @@ public class Main {
         String phone_no = sc.nextLine().trim();
         String phoneRegex = "^(?:\\+91|91|0)?[6-9]\\d{9}$";
         Pattern patternP = Pattern.compile(phoneRegex);
-        Matcher matcherP = pattern.matcher(phone_no);
+        Matcher matcherP = patternP.matcher(phone_no);
 
         if (matcherP.matches()) {
             System.out.println("Valid Phone no");
@@ -286,6 +296,49 @@ public class Main {
         }
     }
 
+    private static void conTransfer() {
+        System.out.println("Enter Source account no: ");
+        String fromAccountNo = sc.nextLine().trim();
+        Account fromAccount = accounts.get(fromAccountNo);
+        if (fromAccount == null) {
+            System.out.println("Source Account not found");
+            return;
+        }
+
+        System.out.println("Enter Destination account no: ");
+        String toAccountNoStr = sc.nextLine().trim();
+        Account toAccount = accounts.get(toAccountNoStr);
+        if (toAccount == null) {
+            System.out.println("Destination Account not found");
+            return;
+        }
+        if (fromAccountNo.equals(toAccountNoStr)) {
+            System.out.println("Cannot transfer to the same account");
+            return;
+        }
+
+        System.out.println("Enter amount");
+        BigDecimal amount = new BigDecimal(sc.nextLine().trim());
+
+        // Fix: consistent lock ordering
+        Account firstLock = fromAccountNo.compareTo(toAccountNoStr) < 0 ? fromAccount : toAccount;
+        Account secondLock = firstLock == fromAccount ? toAccount : fromAccount;
+
+        synchronized (firstLock) {
+            synchronized (secondLock) {
+                try {
+                    fromAccount.withdraw(amount);
+                    toAccount.deposit(amount);
+                    System.out.println("Transferred " + amount + " from Account "
+                            + fromAccount.getAccountNo() + " to Account " + toAccount.getAccountNo());
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Transfer failed: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+
     private static void performTransfer(){
         System.out.println("Enter Source account no: ");
         String fromAccountNo = sc.nextLine().trim();
@@ -319,6 +372,7 @@ public class Main {
             toAccount.deposit(amount);
             String transactionId = generateTransactionId();
             Transaction transaction = new Transaction(fromAccountNo,amount, LocalDateTime.now(),transactionId, TransactionType.WITHDRAW,toAccountNoStr);
+            transactions.add(transaction);
         }catch (NumberFormatException e)
         {
             System.out.println("invalid Amount entered");
@@ -353,6 +407,74 @@ public class Main {
         }
 
     }
+
+    private static void demoMode(){
+        //customer
+        LocalDate dateOfB1 = LocalDate.parse("2003-12-11",dateFormatter);
+        Customer cust1 = new Customer("123",dateOfB1,"crce@gmail.com","Alice","123","9820074167");
+        customers.put("123",cust1);
+
+        LocalDate dateOfB2 = LocalDate.parse("2003-12-21",dateFormatter);
+        Customer cust2 = new Customer("1234",dateOfB2,"crce2@gmail.com","Bob","123","9820074168");
+        customers.put("1234",cust2);
+
+        System.out.println("Customer Registered Succesfully");
+
+        System.out.println();
+
+        String accountNo1 = generateAccountNo();
+        BigDecimal initialBalance1 = new BigDecimal("10000");
+        Account account1 = new SavingsAccount(accountNo1,initialBalance1,"123");
+
+
+        String accountNo2 = generateAccountNo();
+        BigDecimal initialBalance2 = new BigDecimal("12000");
+        Account account2 = new CurrentAccount(accountNo2,initialBalance2,"1234");
+
+
+
+        accounts.put(accountNo1,account1);
+        accounts.put(accountNo2,account2);
+        System.out.println("Accounts created succesfullly");
+
+        BigDecimal amount = new BigDecimal("1000");
+        account1.withdraw(amount);
+        account2.deposit(amount);
+        String transactionId = generateTransactionId();
+        Transaction transaction = new Transaction(accountNo1,amount, LocalDateTime.now(),transactionId, TransactionType.WITHDRAW,accountNo2);
+        transactions.add(transaction);
+
+        System.out.println();
+        System.out.println("++++++Account Details+++++");
+
+        System.out.println(account1.toString());
+        if(account1 instanceof SavingsAccount)
+        {
+            System.out.println("Account Type: Savings Account");
+            System.out.println("Interest Rate:"+account1.calculateInterest());
+        }
+        else {
+            System.out.println("Account Type: Currents Accont");
+            System.out.println("Interest Rate"+account2.calculateInterest());
+        }
+
+        System.out.println(account2.toString());
+
+        account2.toString();
+        if(account2 instanceof SavingsAccount)
+        {
+            System.out.println("Account Type: Savings Account");
+            System.out.println("Interest Rate:"+account2.calculateInterest());
+        }
+        else {
+            System.out.println("Account Type: Currents Accont");
+            System.out.println("Interest Rate"+account2.calculateInterest());
+        }
+
+
+    }
+
+
 
 
     private static void viewTransactionHistory(){
